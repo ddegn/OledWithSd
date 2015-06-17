@@ -64,7 +64,7 @@ OBJ
   Pst : "Parallax Serial TerminalDat"
   Format : "StrFmt"
   Sd[2]: "SdSmall" 
-  Spi : "StepperSpi" 
+  Spi : "OledSpi" 
   Num : "Numbers"
    
 VAR
@@ -2249,7 +2249,7 @@ PUB GetOledBuffer
 
   result := Spi.GetBuffer
   
-PUB SetSleepDrv8711(sleepAxis, state)
+{PUB SetSleepDrv8711(sleepAxis, state)
 
   sleepAxis *= Header#CHANNELS_PER_CS
   sleepAxis += Header#SLEEP_DRV8711_X_595
@@ -2397,7 +2397,7 @@ PUB SetupDvr8711(axis, drive, microCode, decayMode, gateSpeed, gateDrive, deadti
 
   WriteDrv8711(axis, Header#CTRL_REG, controlReg | Header#DRV8711CTL_ENABLE)
 
-
+    }
 DAT
 
 unitsText               byte "steps", 0

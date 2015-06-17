@@ -66,8 +66,8 @@ measuredStack           long 0
 oledStackPtr            long 0
 'microStepMultiplier     long 1
 'machineState            byte Header#INIT_STATE
-stepPin                 byte Header#STEP_X_PIN, Header#STEP_Y_PIN, Header#STEP_Z_PIN
-directionPin            byte Header#DIR_X_PIN, Header#DIR_Y_PIN, Header#DIR_Z_PIN
+'stepPin                 byte Header#STEP_X_PIN, Header#STEP_Y_PIN, Header#STEP_Z_PIN
+'directionPin            byte Header#DIR_X_PIN, Header#DIR_Y_PIN, Header#DIR_Z_PIN
 units                   byte Header#MILLIMETER_UNIT 
 delimiter               byte 13, 10, ",", 9, 0
 executeState            byte INIT_EXECUTE
