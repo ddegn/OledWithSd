@@ -77,8 +77,8 @@ VAR
   long globalMultiplier, globalDecPoints
   long oledLabelPtr, oledDataPtrPtr, oledDataQuantity ' keep together and in order
   long shiftRegisterOutput, shiftRegisterInput
-  long adcData[8]
-  long debugSpi[16], extraDebug[16]
+  'long adcData[8]
+  'long debugSpi[16], extraDebug[16]
   long configPtr
   
   byte sdMountFlag[Header#NUMBER_OF_SD_INSTANCES]
@@ -100,7 +100,6 @@ configNamePtr           long 0
 fontFileName            long 0-0
 
 machineState            byte Header#INIT_STATE
-'units                   byte Header#MILLIMETER_UNIT 
 delimiter               byte 13, 10, ",", 9, 0
 targetOledState         byte Header#DEMO_OLED
 oledState               byte Header#DEMO_OLED
@@ -119,27 +118,6 @@ lineLimit               byte 0-0
 columnLimit             byte 0-0
 characterFlag           byte 0
 rowOfBytes              byte 0[128]
-{configData              byte 0[Header#CONFIG_SIZE] Header#DEFAULT_MACHINE_STATE, HOMED_OFFSET, NUNCHUCK_MODE_OFFSET
-  VERSION_OFFSET_0, VERSION_OFFSET_1, VERSION_OFFSET_2, VERSION_OFFSET_3
-  VERSION_OFFSET_4, VERSION_OFFSET_5, VERSION_OFFSET_6
-  POSITION_X_OFFSET_0, POSITION_X_OFFSET_1, POSITION_X_OFFSET_2, POSITION_X_OFFSET_3
-  POSITION_X_OFFSET_4, POSITION_X_OFFSET_5, POSITION_X_OFFSET_6, POSITION_X_OFFSET_7
-  POSITION_Y_OFFSET_0, POSITION_Y_OFFSET_1, POSITION_Y_OFFSET_2, POSITION_Y_OFFSET_3
-  POSITION_Y_OFFSET_4, POSITION_Y_OFFSET_5, POSITION_Y_OFFSET_6, POSITION_Y_OFFSET_7
-  POSITION_Z_OFFSET_0, POSITION_Z_OFFSET_1, POSITION_Z_OFFSET_2, POSITION_Z_OFFSET_3
-  POSITION_Z_OFFSET_4, POSITION_Z_OFFSET_5, POSITION_Z_OFFSET_6, POSITION_Z_OFFSET_7
-  LIMIT_Z_OFFSET_0, LIMIT_Z_OFFSET_1, LIMIT_Z_OFFSET_2, LIMIT_Z_OFFSET_3
-  LIMIT_Z_OFFSET_4, LIMIT_Z_OFFSET_5, LIMIT_Z_OFFSET_6, LIMIT_Z_OFFSET_7
-  DRIVE_DRV8711_0, DRIVE_DRV8711_1, MICROSTEP_CODE_DRV8711
-  DECAY_MODE_DRV8711_0, DECAY_MODE_DRV8711_1, DECAY_MODE_DRV8711_2
-  GATE_SPEED_DRV8711_0, GATE_SPEED_DRV8711_1
-  GATE_DRIVE_DRV8711_0, GATE_DRIVE_DRV8711_1
-  DEADTIME_DRV8711_0, DEADTIME_DRV8711_1 }  
-     
-'previousPoints          byte 0[4]
-
-'previousInvert          byte 0
-
 
 PUB Start
 
@@ -196,33 +174,7 @@ PUB D 'ebugCog
   Pst.Dec(cogid)
   Pst.Char(":")
   Pst.Char(32)
-  
-{PUB SwitchToSubProgram(subIndex) : subProgramName
-'' This method is mainly a debugging aid. Most of this
-'' can be removed in the future.
-
-  subProgramName := Header.GetSubProgramName(subIndex)
-  Pst.str(string(11, 13, "Sd.bootPartition("))
-  Pst.str(subProgramName)
-  Pst.Char(")")
-  waitcnt(clkfreq * 2 + cnt)
-  MenuSelection(subProgramName)
-        
-PUB MenuSelection(fileNamePtr)
-
-  'configData[Header#MACHINE_STATE_OFFSET] := machineState
-  byte[configPtr][Header#PROGRAM_STATE_OFFSET] := Header#TRANSITIONING_PROGRAM
-  OpenOutputFileW(0, configNamePtr, -1)
-  Sd[0].writeData(@configData, Header#CONFIG_SIZE)
-  'MountSd(0)
-  Sd[0].bootPartition(fileNamePtr)
-
-  PressToContinueOrClose(-1)
-  Pst.str(string(11, 13, "Something is wrong."))               
-  Pst.str(string(11, 13, "Preparing to reboot."))               
-  waitcnt(clkfreq * 3 + cnt)
-  reboot
-    }    
+   
 PUB ResetVerticalScroll
 
   activeScrollRow := 0
@@ -480,7 +432,7 @@ PUB SetOled(state, labelPtr, dataPtrPtr, dataQuantity)
           }
 PRI OledMonitor ': frozenState
   
-  Spi.Start(Spi#SSD1306_SWITCHCAPVCC, Spi#TYPE_128X64, @shiftRegisterOutput, @debugSpi)
+  Spi.Start(Spi#SSD1306_SWITCHCAPVCC, Spi#TYPE_128X64)
   
   repeat
     oledState := targetOledState
@@ -713,8 +665,8 @@ PRI PropLogo(frozenState)
   if true 'debugFlag
     D
     Pst.str(string(11, 13, "PropLogo Before UpdateDisplay"))
-    Pst.str(string(11, 13, "refreshCount = "))
-    Pst.Dec(Spi.GetRefreshCount)
+    'Pst.str(string(11, 13, "refreshCount = "))
+    'Pst.Dec(Spi.GetRefreshCount)
     C
     
   UpdateDisplay
@@ -726,8 +678,8 @@ PRI PropLogo(frozenState)
   if true 'debugFlag
     D
     Pst.str(string(11, 13, "PropLogo Before Bounce"))
-    Pst.str(string(11, 13, "refreshCount = "))
-    Pst.Dec(Spi.GetRefreshCount)
+    'Pst.str(string(11, 13, "refreshCount = "))
+    'Pst.Dec(Spi.GetRefreshCount)
     C 'PressToContinue'C
   
   {BounceBitmap(frozenState, @propBeanie, 32, 32, {
@@ -740,8 +692,8 @@ PRI PropLogo(frozenState)
   if true 'debugFlag
     D
     Pst.str(string(11, 13, "PropLogo After Bounce"))
-    Pst.str(string(11, 13, "refreshCount = "))
-    Pst.Dec(Spi.GetRefreshCount)
+    'Pst.str(string(11, 13, "refreshCount = "))
+    'Pst.Dec(Spi.GetRefreshCount)
     C
     
  { repeat result from 0 to 8
@@ -2179,255 +2131,7 @@ PUB PressToContinueC
   L
   Pst.RxFlush
   C
-{  
-PUB PressToContinueOrClose(closeCharacter)
-'150406a
-
-  if closeCharacter <> -1
-    Pst.str(string(11, 13, "Press ", QUOTE))
-    Pst.Char(closeCharacter)
-    Pst.str(string(QUOTE, " to close or any other key to continue."))
-    result := Pst.CharIn
-  else
-    result := -1  
-  if result == closeCharacter
-    Pst.str(string(11, 13, "Closing all files."))
-    'Pst.str(string(11, 13, "End of program.")) 
-    repeat result from 0 to 1
-      Sd[result].closeFile
-      Pst.str(string(11, 13, "filePosition["))
-      Pst.Dec(result)
-      Pst.str(string("] = "))
-      Pst.Dec(filePosition[result])
-      UnmountSd(result)
-    UnmountSd(Header#DESIGN_AXIS)
-    PressToContinue
-  else
-    result := 0
-
-PUB GetUnitsName(unitIndex)
-
-  result := Header.FindString(@unitsText, unitIndex)
-                        
-PUB GetAxisName(axisIndex)
-
-  result := Header.FindString(@axesText, axisIndex)
-                        
-PUB GetMachineStateName(machineStateIndex)
-
-  result := Header.FindString(@machineStateTxt, machineStateIndex)
-                        
-PUB SetAdcChannels(firstChan, numberOfChans)
-
-  Spi.SetAdcChannels(firstChan, numberOfChans)
-
-PUB ReadAdc
-
-  Spi.ReadAdc
   
-PUB GetAdcPtr
-
-  result := @adcData
-  
-PUB GetAdcBytePtr
-'' returns address of byte variable "adcChannelsInUse."
-  result := Spi.GetAdcPtr
-  
-PUB Get165Value
-
-  result := shiftRegisterInput
-
-PUB Get165Address
-
-  result := @shiftRegisterInput
-        
-PUB GetAxisText
-
-  result := @axesText
- }  
 PUB GetOledBuffer
 
   result := Spi.GetBuffer
-  
-{PUB SetSleepDrv8711(sleepAxis, state)
-
-  sleepAxis *= Header#CHANNELS_PER_CS
-  sleepAxis += Header#SLEEP_DRV8711_X_595
-  if state
-    Spi.SpinHigh595(sleepAxis)
-  else
-    Spi.SpinLow595(sleepAxis) 
-    
-PUB SetResetStateDrv8711(resetAxis, state)
-
-  resetAxis *= Header#CHANNELS_PER_CS
-  resetAxis += Header#RESET_DRV8711_X_595
-  if state
-    Spi.SpinHigh595(resetAxis)
-  else
-    Spi.SpinLow595(resetAxis)
-    
-PUB ResetDrv8711(axis)
-
-  'WakeUpDrv8711(sleepAxis)
-  SetSleepDrv8711(axis, 1) 
-  'axis := axis * Header#CHANNELS_PER_CS
-  'axis += Header#SLEEP_DRV8711_X_595
-  'Spi.SpinHigh595(axis) ' set sleep pin high
-  waitcnt(MS_001 + cnt)
-  'axis -= Header#SLEEP_DRV8711_X_595
-  'axis += Header#RESET_DRV8711_X_595
-  'Spi.SpinHigh595(axis)
-  SetResetStateDrv8711(axis, 1)
-  waitcnt(MS_001 + cnt)
-  'Spi.SpinLow595(axis)
-  SetResetStateDrv8711(axis, 0)
-  waitcnt(MS_001 + cnt)
-  
-PUB GetMicrosteps(axis) 
-
-  result := ReadDrv8711(axis, 0)
-  result >>= 3
-  result &= %111
-  axis := result
-  result := 1
-  repeat axis 
-    result *= 2
-
-PUB ReadDrv8711(axis, register) 
-
-  {Pst.Str(string(11, 13, "ReadDrv8711, debug = "))
-  repeat result from 0 to 8
-    Pst.Dec(debugSpi[result])
-    Pst.Str(string(", "))
-  Pst.Dec(debugSpi[$F])  }
-  result := Spi.ReadDrv8711(axis, register)
-  
-  {repeat axis from 0 to 8
-    Pst.Dec(debugSpi[axis])
-    Pst.Str(string(", "))
-  Pst.Dec(debugSpi[$F]) }
-  
-PUB WriteDrv8711(axis, register, value) 
-
-  Spi.WriteDrv8711(axis, register, value)
-  
-PUB ShowRegisters(axis) | register, value
-
-  repeat register from 0 to 7
-    value := ReadDrv8711(axis, 8|register)
-    Pst.Str(string(11, 13, "register #"))
-    Pst.Dec(register)
-    Pst.Str(string(" = $"))
-    Pst.Hex(value, 2)
-
-PUB SetupDvr8711(axis, drive, microCode, decayMode, gateSpeed, gateDrive, deadtime) | {
-} decayTime, controlReg
-  'drive_level := drive
-  {microstep_code := 0
-  repeat until microsteps < 2
-    microsteps >>= 1
-    microstep_code += 1  }
-  decayTime := $20
-
-  ' CONTROL REG    ddggsmmmmSDE
-  ' dd = deadtime (400, 450, 650, 850)ns
-  ' gg = Igain (5, 10, 20, 40)   note threshold after gain = 2.75V, so (550mV, 275mV, 138mV, 69mV)
-  ' s = (internal, external) stall detect
-  ' mmmm = (full, half, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256,...) microstepping mode
-  ' S = (nop, forcestep)  - self-clears
-  ' D = (normal, reverse) XORed with direction pin
-  ' E = (off, on)  enable motor(s)
-  controlReg := ((deadtime & 3) << 10) | ((microCode & $F) << 3) | {
-  } Header#DRV8711CTL_IGAIN_10 | Header#DRV8711CTL_STALL_INTERNAL
-
-  WriteDrv8711(axis, Header#CTRL_REG, controlReg)
-
-  ' TORQUE REG  -ssstttttttt
-  ' sss = (50,100,200,300,400,600,800,1000)us, backEMF sample threshhold
-  ' tttttttt = torque level
-  WriteDrv8711(axis, Header#TORQUE_REG, Header#DRV8711TRQ_BEMF_50us | (drive & {
-  } Header#DRV8711TRQ_TORQUE_MASK))
-
-  ' OFF REG  ---moooooooo
-  ' m = (stepper, DCmotors)
-  ' oooooooo = off time in 500ns units (500ns..128us)
-  WriteDrv8711(axis, Header#OFF_REG, Header#DRV8711OFF_STEPMOTOR | ($030 & {
-  } Header#DRV8711OFF_OFFTIME_MASK))
-
-  ' BLANK REG  ---abbbbbbbb
-  ' a = (off,on)  adaptive blanking time
-  ' bbbbbbbb = blank time in units 20ns, but 1us minimum, so 1us--5.12us
-  WriteDrv8711(axis, Header#BLANK_REG, Header#DRV8711BLNK_ADAPTIVE_BLANK | {
-  } ($80 & Header#DRV8711BLNK_BLANKTIME_MASK))
-
-  ' DECAY REG  -mmmdddddddd
-  ' mmm = (slow, slow/mix, fast, mixed, slow/auto, auto, ...)
-  ' dddddddd = mixed decay time in units 0.5us--128us
-  WriteDrv8711(axis, Header#DECAY_REG, (decayMode & 7) << 8 | (decayTime & {
-  } Header#DRV8711DEC_DECAYTIME_MASK))
-
-  ' STALL REG  ddsstttttttt
-  ' dd = (1/32, 1/16, 1/8, 1/4)  divide backEMF
-  ' ss = (1, 2, 4, 8) steps before stall asserted
-  ' tttttttt = stall threshold
-  WriteDrv8711(axis, Header#STALL_REG, Header#DRV8711STL_DIVIDE_8 | {
-  } Header#DRV8711STL_STEPS_1 | ($20 & Header#DRV8711STL_THRES_MASK))
-
-  ' DRIVE REG  HHLLhhllddoo
-  ' HH = (50, 100, 150, 200)mA  high gate drive level
-  ' LL = (100, 200, 300, 400)mA low gate drive level
-  ' hh = (250, 500, 1000, 2000)ns high gate active drive time
-  ' ll = (250, 500, 1000, 2000)ns low gate active drive time
-  ' dd = (1, 2, 4, 8)us  OCP deglitch time
-  ' oo = (250, 500, 750, 1000)mV  OCP threshold (across FET)
-  WriteDrv8711(axis, Header#DRIVE_REG,  ((gateDrive & 3) * $500) | ((gateSpeed & 3) * {
-  } $050) | Header#DRV8711DRV_OCP_1us | Header#DRV8711DRV_OCP_250mV)
-
-  ' STATUS REG  ----LSBAUbaT
-  ' L = latched stall fault (write 0 to clear)
-  ' S = transient stall fault (self clearing)
-  ' B = predriver B fault (write 0 to clear)
-  ' A = predriver A fault (write 0 to clear)
-  ' U = undervoltage fault (self clearing)
-  ' b = B overcurrent fault (write 0 to clear)
-  ' a = A overcurrent fault (write 0 to clear)
-  ' T = overtemperature fault (self clearing)
-  WriteDrv8711(axis, Header#STATUS_REG, 0)  ' clear all status bits
-
-  WriteDrv8711(axis, Header#CTRL_REG, controlReg | Header#DRV8711CTL_ENABLE)
-
-    }
-DAT
-
-unitsText               byte "steps", 0
-                        byte "turns", 0
-                        byte "inches", 0
-                        byte "millimeters", 0
-
-axesText                byte "X_AXIS", 0
-                        byte "Y_AXIS", 0
-                        byte "Z_AXIS", 0
-                        byte "DESIGN_AXIS", 0
-
-machineStateTxt         byte "INIT_STATE", 0
-                        byte "HOMED_STATE", 0
-                        byte "ENTER_PROGRAM_STATE", 0
-                        byte "INTERPRETE_PROGRAM_STATE", 0
-                        byte "DISPLAY_PROGRAM_STATE", 0
-                        byte "RUN_PROGRAM_STATE", 0
-                        byte "MANUAL_KEYPAD_STATE", 0
-                        byte "MANUAL_NUNCHUCK_STATE", 0
-
-DAT
-{
-lmrVB   ' vertical bytes 
-              byte $00,$00,$00,$00,$00,$00,$00,$C8,$E4,$C0,$C0,$88,$08,$18,$10,$20
-              byte $70,$20,$60,$00,$00,$10,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-              byte $00,$00,$00,$00,$00,$00,$80,$0F,$D7,$1F,$3F,$FF,$FE,$FC,$FC,$FC
-              byte $DC,$EC,$A8,$16,$B7,$F8,$7A,$FC,$F2,$A2,$77,$F8,$F8,$00,$00,$00
-              byte $08,$3C,$7C,$FA,$F9,$F1,$F1,$E1,$E3,$C7,$86,$8E,$0F,$1D,$15,$3F
-              byte $6F,$67,$E7, $EF, $FB,$7F,$7F,$39,$3D,$7F,$7D,$71,$24,$39,$1E,$08
-              byte $00,$00,$00,$00,$00,$01,$01,$03,$03,$07,$07,$0F,$1F,$1F,$3E,$3C
-              byte $18,$1D,$0E,$07,$00,$00,$00,$00
-                 } 
