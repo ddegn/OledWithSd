@@ -40,7 +40,8 @@ VAR
   long timer
   'long topX, topY, topZ
   long oledPtr[Header#MAX_OLED_DATA_LINES]
-  long adcPtr, buttonMask
+  'long adcPtr
+  'long buttonMask
   long configPtr', filePosition[4]
   long globalMultiplier, fileNamePtr
   long fileIdNumber[Header#MAX_DATA_FILES]
@@ -61,22 +62,22 @@ VAR
 DAT
 
 designFileIndex         long -1
-lowerZAmount            long Header#DEFAULT_Z_DISTANCE
+'lowerZAmount            long Header#DEFAULT_Z_DISTANCE
 measuredStack           long 0
 oledStackPtr            long 0
 'microStepMultiplier     long 1
 'machineState            byte Header#INIT_STATE
 'stepPin                 byte Header#STEP_X_PIN, Header#STEP_Y_PIN, Header#STEP_Z_PIN
 'directionPin            byte Header#DIR_X_PIN, Header#DIR_Y_PIN, Header#DIR_Z_PIN
-units                   byte Header#MILLIMETER_UNIT 
+'units                   byte Header#MILLIMETER_UNIT 
 delimiter               byte 13, 10, ",", 9, 0
 executeState            byte INIT_EXECUTE
 
 programState            byte Header#FRESH_PROGRAM
-microsteps              byte Header#DEFAULT_MICROSTEPS
+'microsteps              byte Header#DEFAULT_MICROSTEPS
 machineState            byte Header#DEFAULT_MACHINE_STATE
 previousProgram         byte Header#INIT_MAIN
-homedFlag               byte Header#UNKNOWN_POSITION, 0[3]                          
+'homedFlag               byte Header#UNKNOWN_POSITION, 0[3]                          
 positionX               long 0 '$80_00_00_00
 positionY               long 0 '$80_00_00_00
 positionZ               long 0 '$80_00_00_00
@@ -109,8 +110,8 @@ PUB Setup(parameter0, parameter1) '| cncCog
   
   oledStackPtr := Cnc.Start
 
-  adcPtr := Cnc.GetAdcPtr
-  buttonMask := 1 << Header#JOYSTICK_BUTTON_165
+  'adcPtr := Cnc.GetAdcPtr
+  'buttonMask := 1 << Header#JOYSTICK_BUTTON_165
   
   Pst.str(string(11, 13, "Helper object started."))
   'Pst.Dec(cncCog)   
@@ -176,7 +177,7 @@ PUB MainLoop | localIndex, localBuffer[5]
       
       Cnc.PressToContinue
     
-    AdcJoystickLoop
+    'AdcJoystickLoop
       
 PRI DebugStack '| measuredStack 
 
@@ -224,7 +225,7 @@ PRI CheckStack(localPtr, localSize, previousSize, fillLong)
         previousSize := result
   result := ++previousSize
 
-PUB Adc3PotsLoop | localIndex, row, pointer
+{PUB Adc3PotsLoop | localIndex, row, pointer
 
   Pst.Str(string(11, 13, "Adc3PotsLoop Method")) 
  
@@ -471,7 +472,7 @@ PUB AdcJoystickLoop | localIndex, buttonValue, previousButton, {
   waitcnt(clkfreq * 2 + cnt)
 
 
-{PUB ReturnToTop
+PUB ReturnToTop
 
   programState := Header#TRANSITIONING_PROGRAM
   previousProgram := Header#DESIGN_READ_MAIN

@@ -65,7 +65,7 @@ OBJ
   Format : "StrFmt"
   Sd[2]: "SdSmall" 
   Spi : "OledSpi" 
-  Num : "Numbers"
+  'Num : "Numbers"
    
 VAR
 
@@ -73,7 +73,7 @@ VAR
   'long lastRefreshTime, refreshInterval
   long oledStack[Header#MONITOR_OLED_STACK_SIZE]
   long sdErrorNumber, sdErrorString, sdTryCount
-  long filePosition[Header#NUMBER_OF_AXES]
+  long filePosition[Header#NUMBER_OF_SD_INSTANCES]
   long globalMultiplier, globalDecPoints
   long oledLabelPtr, oledDataPtrPtr, oledDataQuantity ' keep together and in order
   long shiftRegisterOutput, shiftRegisterInput
@@ -100,7 +100,7 @@ configNamePtr           long 0
 fontFileName            long 0-0
 
 machineState            byte Header#INIT_STATE
-units                   byte Header#MILLIMETER_UNIT 
+'units                   byte Header#MILLIMETER_UNIT 
 delimiter               byte 13, 10, ",", 9, 0
 targetOledState         byte Header#DEMO_OLED
 oledState               byte Header#DEMO_OLED
@@ -595,7 +595,7 @@ PRI OledDemo(frozenState) | h, i, j, k, q, r, s, count
     ''value in memory as two lines of binary numbers (2*16)
     ''******************************************************
     '''Spi.AutoUpdateOff
-    Spi.clearDisplay
+    {Spi.clearDisplay
     repeat q from 0 to 512 step 16
       bytemove(@tstr, Num.ToStr(||word[q + 2], Num#BIN17), 20)
       Write4x16String(@tstr[1], 16, 0, 0)
@@ -626,7 +626,7 @@ PRI OledDemo(frozenState) | h, i, j, k, q, r, s, count
       UpdateDisplay
       
       if WatchForChange(@targetOledState, frozenState, 100)
-        return
+        return   }
                
     ''****************************************************
     ''Scrolling Parallax - 16x32 Font, 1 line 8 characters
@@ -1764,7 +1764,7 @@ PUB GetMultiplier
 PUB GetDecPoints
 
   result := globalDecPoints
-  
+{  
 PUB GetDec(sdInstance) | inputCharacter, negativeFlag, startOfNumberFlag
 
   Pst.str(string(11, 13, "GetDec"))
@@ -1814,7 +1814,7 @@ PUB GetDec(sdInstance) | inputCharacter, negativeFlag, startOfNumberFlag
 
   Pst.str(string(11, 13, "GetDec result = "))
   Pst.Dec(result)
-
+        }
 PUB OpenFileToRead(sdInstance, basePtr, fileToOpen)
 '' sdLock should be cleared prior to calling this method.
 
@@ -2179,7 +2179,7 @@ PUB PressToContinueC
   L
   Pst.RxFlush
   C
-  
+{  
 PUB PressToContinueOrClose(closeCharacter)
 '150406a
 
@@ -2193,7 +2193,7 @@ PUB PressToContinueOrClose(closeCharacter)
   if result == closeCharacter
     Pst.str(string(11, 13, "Closing all files."))
     'Pst.str(string(11, 13, "End of program.")) 
-    repeat result from 0 to 3
+    repeat result from 0 to 1
       Sd[result].closeFile
       Pst.str(string(11, 13, "filePosition["))
       Pst.Dec(result)
@@ -2240,11 +2240,11 @@ PUB Get165Value
 PUB Get165Address
 
   result := @shiftRegisterInput
-
+        
 PUB GetAxisText
 
   result := @axesText
-  
+ }  
 PUB GetOledBuffer
 
   result := Spi.GetBuffer
