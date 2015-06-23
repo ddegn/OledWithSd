@@ -22,7 +22,7 @@ CON
   QUOTE = 34
 
   'executeState enumeration
-  #0, INIT_EXECUTE, SELECT_TO_EXECUTE, ACTIVE_EXECUTE, RETURN_FROM_EXECUTE
+  '#0, INIT_EXECUTE, SELECT_TO_EXECUTE, ACTIVE_EXECUTE, RETURN_FROM_EXECUTE
             
 VAR
 
@@ -40,6 +40,9 @@ VAR
   long timer
   'long topX, topY, topZ
   long oledPtr[Header#MAX_OLED_DATA_LINES]
+  'long testData[Header#MAX_OLED_DATA_LINES]
+
+  
   'long adcPtr
   'long buttonMask
   long configPtr', filePosition[4]
@@ -71,33 +74,27 @@ oledStackPtr            long 0
 'directionPin            byte Header#DIR_X_PIN, Header#DIR_Y_PIN, Header#DIR_Z_PIN
 'units                   byte Header#MILLIMETER_UNIT 
 delimiter               byte 13, 10, ",", 9, 0
-executeState            byte INIT_EXECUTE
+'executeState            byte INIT_EXECUTE
 
-programState            byte Header#FRESH_PROGRAM
+'programState            byte Header#FRESH_PROGRAM
 'microsteps              byte Header#DEFAULT_MICROSTEPS
-machineState            byte Header#DEFAULT_MACHINE_STATE
-previousProgram         byte Header#INIT_MAIN
+'machineState            byte Header#DEFAULT_MACHINE_STATE
+'previousProgram         byte Header#INIT_MAIN
 'homedFlag               byte Header#UNKNOWN_POSITION, 0[3]                          
-positionX               long 0 '$80_00_00_00
-positionY               long 0 '$80_00_00_00
-positionZ               long 0 '$80_00_00_00
+'positionX               long 0 '$80_00_00_00
+'ositionY               long 0 '$80_00_00_00
+'positionZ               long 0 '$80_00_00_00
  
 OBJ
 
-  Header : "HeaderCnc"
+  Header : "HeaderOled"
   Pst : "Parallax Serial TerminalDat"
   Format : "StrFmt"
-  'Sd[1]: "SdSmall" 
-  Cnc : "CncCommonMethods"
-  'Motor : "MotorControl"
+  Oled : "OledCommonMethods"
    
 PUB Setup(parameter0, parameter1) '| cncCog
 
-  'configPtr := Header.GetConfigName
-  'fileNamePtr := Header.GetFileName
   Pst.Start(115_200)
- 
-  'cognew(OledDemo, @stack)
  
   repeat
     result := Pst.RxCount
@@ -105,84 +102,37 @@ PUB Setup(parameter0, parameter1) '| cncCog
     waitcnt(clkfreq / 2 + cnt)
   until result
   Pst.RxFlush
+        
+  oledStackPtr := Oled.Start
 
-  'TestMath
-  
-  oledStackPtr := Cnc.Start
-
-  'adcPtr := Cnc.GetAdcPtr
-  'buttonMask := 1 << Header#JOYSTICK_BUTTON_165
-  
   Pst.str(string(11, 13, "Helper object started."))
-  'Pst.Dec(cncCog)   
-  'Pst.Char(".")   
+
 
   waitcnt(clkfreq * 2 + cnt)
 
-  'Cnc.PressToContinue
-  
-  'AdcJoystickLoop
 
-
-  'repeat
-  
-  'TempLoop
-
-  'repeat
-  
-  'OpenConfig
-  'repeat
   result := 0
- { repeat result from 0 to 2
-    Cnc.ResetDrv8711(result)
-    Pst.str(string(11, 13, "Reset axis #"))
-    Pst.Dec(result)   
-    Pst.Char(".")
 
-    Pst.str(string(11, 13, "Reading registers prior to setup."))
-    Cnc.ShowRegisters(result)
-    
-    Cnc.SetupDvr8711(result, Header#DEFAULT_DRIVE_DRV8711, Header#DEFAULT_MICROSTEP_CODE_DRV8711, {
-    } Header#DEFAULT_DECAY_MODE_DRV8711, Header#DEFAULT_GATE_SPEED_DRV8711, {
-    } Header#DEFAULT_GATE_DRIVE_DRV8711, Header#DEFAULT_DEADTIME_DRV8711)
-    Pst.str(string(11, 13, "Setup finished axis #"))
-    Pst.Dec(result)   
-    Pst.Char(".")
-    Cnc.PressToContinue
-    Pst.str(string(11, 13, "Reading registers."))
-    Cnc.ShowRegisters(result)
-    Cnc.PressToContinue    
-      }
-  'repeat
-  Cnc.PressToContinue
-  'Motor.Start(Cnc.Get165Address)
+  Oled.PressToContinue
    
   MainLoop
 
 
 PUB MainLoop | localIndex, localBuffer[5]
-
-  'axisIndex := 0
-  'longfill(@distance, 0, 2)
   
   repeat
-    Cnc.SetOled(Header#PAUSE_MONITOR_OLED, 0, 0, 0)
+    Oled.SetOled(Header#PAUSE_MONITOR_OLED, 0, 0, 0)
     repeat localIndex from 0 to 16
       result := Format.Str(@localBuffer, string("line # "))
       result := Format.Dec(result, localIndex)
       byte[result] := 0
-      Cnc.ScrollString(@localBuffer, 1)
-      'Cnc.UpdateDisplay
-      'DebugStack
-      
-      Cnc.PressToContinue
-    
-    'AdcJoystickLoop
-      
-PRI DebugStack '| measuredStack 
+      Oled.ScrollString(@localBuffer, 1)
+  
+      Oled.PressToContinue
+    GenerateDemoNumbers
+ 
+PRI DebugStack 
 
-  'measuredStack := 0
-  'repeat
 
   Pst.Home
   Pst.ClearEnd
@@ -196,17 +146,7 @@ PRI DebugStack '| measuredStack
   Pst.Str(string(" longs originally set aside for it."))
   Pst.ClearEnd
   Pst.NewLine
-  'Pst.Str(string(" ledLoopCount =  "))
- ' Pst.Dec(ledLoopCount)
-  'Pst.ClearEnd
-  'Pst.NewLine
-  'Pst.ClearEnd
-  'Pst.NewLine
-  'DumpBufferLong(oledStackPtr, Header#MONITOR_OLED_STACK_SIZE, 12)
-  'Pst.ClearEnd
-  'Pst.NewLine
-  'Pst.ClearEnd
-  'Pst.ClearBelow         
+         
   
 PRI CheckStack(localPtr, localSize, previousSize, fillLong)
 '' Find the highest none zero long in the section
@@ -225,263 +165,75 @@ PRI CheckStack(localPtr, localSize, previousSize, fillLong)
         previousSize := result
   result := ++previousSize
 
-{PUB Adc3PotsLoop | localIndex, row, pointer
-
-  Pst.Str(string(11, 13, "Adc3PotsLoop Method")) 
- 
-  oledPtr[0] := Cnc.GetAdcPtr
-
-  oledPtr[1] := oledPtr[0] + 4
-  oledPtr[2] := oledPtr[1] + 4
-  oledPtr[3] := @timer
- 
-  timer := 9999
-  Cnc.SetOled(Header#AXES_READOUT_OLED, @adcLabels, @oledPtr, 4)
-
-  Cnc.SetAdcChannels(0, 3)
-  L
-  Pst.Clear
-  'Pst.RxFlush
-  C
-  repeat
-    Cnc.ReadAdc
-    timer--
-    {Pst.Home}
-    DHome
-    repeat localIndex from 0 to 3
-      Pst.Str(Header.FindString(@adcLabels, localIndex))
-      Pst.Dec(long[oledPtr[localIndex]])
-      {Pst.Char(",")
-      Pst.Char(" ")
-      Pst.Dec(long[oledPtr[localIndex] + 32])  }
-      Pst.Char(11)
-      Pst.Char(13)    
-    C  
-    row++
-    row &= %111
-    'row #>= 7
-
-    pointer := Cnc.SetInvert(0, row * 8, 127, row * 8 + 7)
-    L
-    Pst.Str(string(11, 13, "invert points = ("))
-    Pst.Dec(byte[pointer])
-    Pst.Str(string(", "))
-    Pst.Dec(byte[pointer][1])
-    Pst.Str(string(") & ("))
-    Pst.Dec(byte[pointer][2])
-    Pst.Str(string(", "))
-    Pst.Dec(byte[pointer][3])
-    Pst.Str(string(11, 13, "target invert = ("))
-    Pst.Dec(byte[pointer][-4])
-    Pst.Str(string(", "))
-    Pst.Dec(byte[pointer][-3])
-    Pst.Str(string(") & ("))
-    Pst.Dec(byte[pointer][-2])
-    Pst.Str(string(", "))
-    Pst.Dec(byte[pointer][-1])
-    
-    Pst.Char(")")
-    Pst.Char(11)
-    Pst.Char(13)
-    C
-    waitcnt(clkfreq * 2 + cnt)
-    'result := Pst.RxCount
-    result := Cnc.Get165Value & buttonMask    
-    
-  while result
-  
-  L
-  Pst.Str(string(11, 13, "End of Adc3PotsLoop Method"))
-  C
-
-  Cnc.InvertOff
-  waitcnt(clkfreq / 10 + cnt)
-  Cnc.SetOled(Header#DEMO_OLED, @xyzLabels, @oledPtr, 4) 
-  waitcnt(clkfreq * 2 + cnt)
-  
-PUB AdcJoystickLoop | localIndex, buttonValue, previousButton, {
-} invertPos[2], invertSize, center[3], deadBand, posSlope[2], sizeSlope, previousJoy[3], {
-} temp, maxPos[2], zero
+PUB GenerateDemoNumbers | localIndex, joyX, joyY, joyZ, pot1, pot2, pot3
   L
   Pst.Str(string(11, 13, "AdcJoystickLoop Method"))
   C
-  zero := 0
-  previousButton := -1
-
+ 
   oledPtr[3] := 0 '$80_00_00_00
-  oledPtr[4] := Cnc.GetAdcPtr
+  oledPtr[4] := @pot1
 
-  oledPtr[5] := oledPtr[4] + 4
-  oledPtr[6] := oledPtr[4] + 8
-  oledPtr[0] := oledPtr[4] + 12 '@zero '
-  oledPtr[1] := oledPtr[4] + 16
-  oledPtr[2] := oledPtr[4] + 20
+  oledPtr[5] := @pot2
+  oledPtr[6] := @pot3
+  oledPtr[0] := @joyX
+  oledPtr[1] := @joyY
+  oledPtr[2] := @joyZ
   oledPtr[7] := @timer
-
+                        
   timer := 9999
-  Cnc.SetOled(Header#AXES_READOUT_OLED, @joystickLabels, @oledPtr, 8)
+  Oled.SetOled(Header#AXES_READOUT_OLED, @joystickLabels, @oledPtr, 8)
 
-  Cnc.SetAdcChannels(0, 6)
-
-  maxPos[0] := Header#MAX_OLED_X
-  maxPos[1] := Header#MAX_OLED_Y
-  deadBand := 4095 / 20
-  {center[0] := long[oledPtr[0]]
-  center[1] := long[oledPtr[1]]
-  center[2] := long[oledPtr[2]]}
-  longfill(@center, 4095 / 2, 3)
-  'invertSize := 8
-  invertSize := Header#MIN_OLED_INVERTED_SIZE_Y
-  invertPos[0] := (128 - invertSize) / 2
-  invertPos[2] := (96 - invertSize) / 2
-  posSlope[0] := (center - deadBand) / 10
-  posSlope[1] := (center - deadBand) / -10
-  sizeSlope := posSlope / 2
-  longfill(@previousJoy, 4095 / 2, 3)
+  Oled.StopScroll
   
-  {'150505a
-  L
-  Pst.Clear
-  'Pst.RxFlush
-  C }'150505a
-  repeat
-    'L
-    'DebugStack
-    'C
-    Cnc.ReadAdc
-    {'150505a
-    L
-    Pst.Char(11)
-    Pst.Char(13)
-    Pst.PositionY(0)
-    Pst.Dec(cogid)
-    Pst.Char(":")
-    Pst.Char(32)}'150505a
-    temp := long[oledPtr[2]] - center[2]
-    if temp < -deadBand
-      temp += deadBand
-      temp -= sizeSlope - 1
-    elseif temp > deadBand
-      temp -= deadBand
-      temp += sizeSlope - 1
-    else
-      temp := 0
-    {'150505a
-    Pst.Str(string("temp was = "))
-    Pst.Dec(temp)
-    Pst.Str(string(", sloped temp ="))
-    }'150505a
-    temp /= sizeSlope
-    {'150505a
-    Pst.Dec(temp)
-    Pst.Str(string(", invertSize was ="))
-    Pst.Dec(invertSize)  }'150505a
-    invertSize := Header#MIN_OLED_INVERTED_SIZE_Y #> invertSize + temp <# 96
-    {'150505a
-    Pst.Str(string(", invertSize is ="))
-    Pst.Dec(invertSize)}'150505a
-    
-    repeat localIndex from 0 to 1 
-      temp := long[oledPtr[localIndex]] - center[localIndex]
-      {'150505a
-      Pst.Str(string(11, 13, "temp["))
-      Pst.Dec(localIndex)
-      Pst.Str(string("] was = "))
-      Pst.Dec(temp)
-      Pst.Str(string(", adjusted for deadband = "))}'150505a
-      if temp < -deadBand
-        temp += deadBand
-        temp -= posSlope - 1
-      elseif temp > deadBand
-        temp -= deadBand
-        temp += posSlope - 1
-      else
-        temp := 0
-      '150505aPst.Dec(temp)    
-      temp /= posSlope[localIndex]
-      {'150505a
-      Pst.Str(string(", sloped temp ="))
-      Pst.Dec(temp)    
-      Pst.Str(string(11, 13, "invertPos["))
-      Pst.Dec(localIndex)
-      Pst.Str(string("] was = "))
-      Pst.Dec(invertPos[localIndex])
-      Pst.Str(string(", is = "))  }'150505a
+  repeat 200
+
+    joyX := AddWithLimit(joyX, 1, -999, 9999)
+    joyY := AddWithLimit(joyY, 2, -999, 9999)
+    joyZ := AddWithLimit(joyZ, 3, -999, 9999)
+    pot1 := AddWithLimit(pot1, -2, -999, 9999)
+    pot2 := AddWithLimit(pot2, -3, -999, 9999)
+    pot3 := AddWithLimit(pot3, -4, -999, 9999)
+    timer := AddWithLimit(timer, -1, 0, 9999)
+    'Oled.UpdateDisplay
+   
+  
       
-      invertPos[localIndex] := 0 #> invertPos[localIndex] + temp <# {
-      } (maxPos[localIndex] - (invertSize / 2))
-      '150505a Pst.Dec(invertPos[localIndex])
-      
-      
-    temp := Cnc.SetInvert(invertPos[0], invertPos[1], invertPos[0] + invertSize, invertPos[1] + invertSize)
-    {'150505a
-    Pst.Str(string(11, 13, "SetInvert("))
-    Pst.Dec(invertPos[0])
-    Pst.Str(string(", "))
-    Pst.Dec(invertPos[1])
-    Pst.Str(string(", "))
-    Pst.Dec(invertPos[0] + invertSize)
-    Pst.Str(string(", "))
-    Pst.Dec(invertPos[1] + invertSize)
-    Pst.Char(")")    }'150505a
-    buttonValue := Cnc.Get165Value & buttonMask 
-    '150505aPst.Char(11)
-    '150505aPst.Char(13)
-    '150505aCnc.ReadableBin(buttonValue, 32)
-    if buttonValue <> previousButton
-      previousButton := buttonValue
-      if buttonValue
-        '150505abuttonLabel[8] := "f"
-        '150505abuttonLabel[9] := "f"
-      else
-        '150505abuttonLabel[8] := "n"
-        '150505abuttonLabel[9] := " "
-    '150505aPst.Char(11)
-    '150505aPst.Char(13)
-    'C
-    timer--
-    zero += 1111
-    'DHome
-    'Pst.Home
-    repeat localIndex from 0 to 7
-      '150505aPst.Str(Header.FindString(@adcLabels, localIndex))
-      if oledPtr[localIndex] '<> $80_00_00_00
-        '150505aPst.Dec(long[oledPtr[localIndex]])
-      {Pst.Char(",")
-      Pst.Char(" ")
-      Pst.Dec(long[oledPtr[localIndex] + 32])  }
-      '150505aPst.Char(11)
-      '150505aPst.Char(13)  
-    '150505aC
+    'temp := Oled.SetInvert(invertPos[0], invertPos[1], invertPos[0] + invertSize, invertPos[1] + invertSize)
+    'temp := Oled.SetInvert(invertPos[0], invertPos[1], invertPos[0] + invertSize, invertPos[1] + invertSize)
+               
     waitcnt(clkfreq / 10 + cnt)
-    'result := Pst.RxCount
-    
-  'until result
-    result := Cnc.Get165Value & buttonMask    
-    
-  while result
+  'while result
 
   L
   Pst.Str(string(11, 13, "End of AdcJoystickLoop Method"))
   C
   
-  Cnc.InvertOff
+  Oled.InvertOff
   waitcnt(clkfreq / 10 + cnt)
   
-  Cnc.SetOled(Header#DEMO_OLED, @xyzLabels, @oledPtr, 4) 
+  Oled.SetOled(Header#DEMO_OLED, @xyzLabels, @oledPtr, 4) 
   waitcnt(clkfreq * 2 + cnt)
 
+PUB AddWithLimit(startValue, valueToAdd, lowerLimit, upperLimit)
 
-PUB ReturnToTop
+  result := startValue + valueToAdd
+
+  if result < lowerLimit
+    result := upperLimit
+  elseif result > upperLimit
+    result := lowerLimit
+
+    
+{PUB ReturnToTop
 
   programState := Header#TRANSITIONING_PROGRAM
   previousProgram := Header#DESIGN_READ_MAIN
-  Cnc.OpenOutputFileW(0, configPtr, -1)
-  Cnc.WriteData(0, @programState, Header#CONFIG_SIZE)
+  Oled.OpenOutputFileW(0, configPtr, -1)
+  Oled.WriteData(0, @programState, Header#CONFIG_SIZE)
   'MountSd(0)
-  {Cnc.BootPartition(0, fileNamePtr)
+  {Oled.BootPartition(0, fileNamePtr)
 
-  Cnc.PressToContinueOrClose(-1)
+  Oled.PressToContinueOrClose(-1)
   Pst.str(string(11, 13, 7, "Something is wrong.")) }              
   Pst.str(string(11, 13, 7, "Preparing to reboot."))               
   waitcnt(clkfreq * 3 + cnt)
@@ -505,9 +257,9 @@ PUB ReturnToTop
 PUB MainMenu
 
   longfill(@oledPtr, 0, oledMenuLimit)
-  Cnc.SetOled(Header#AXES_READOUT_OLED, @oledMenu, @oledPtr, oledMenuLimit)
+  Oled.SetOled(Header#AXES_READOUT_OLED, @oledMenu, @oledPtr, oledMenuLimit)
   highlightedLine := oledMenuHighlightRange[0]
-  Cnc.SetAdcChannels(Header#JOY_Y_ADC, Header#JOY_Z_ADC)
+  Oled.SetAdcChannels(Header#JOY_Y_ADC, Header#JOY_Z_ADC)
   Pst.ClearEnd
   Pst.Newline
   Pst.ClearBelow
@@ -536,15 +288,15 @@ PUB CheckMenu(tempValue)
     result := 0
   else
     tempValue := highlightedLine
-    result := Cnc.Get165Value & buttonMask
+    result := Oled.Get165Value & buttonMask
     Pst.str(string(11, 13, "highlightedLine ="))               
     Pst.Dec(highlightedLine)
     Pst.ClearEnd
     Pst.Newline
-    Cnc.ReadableBin(result, 32)
+    Oled.ReadableBin(result, 32)
     
   ifnot result
-    Cnc.InvertOff
+    Oled.InvertOff
     case tempValue
       1, "s", "N": 
         executeState := SELECT_TO_EXECUTE
@@ -554,11 +306,11 @@ PUB CheckMenu(tempValue)
         executeState := RETURN_FROM_EXECUTE
       other:
         executeState := INIT_EXECUTE
-        Cnc.SetOled(Header#AXES_READOUT_OLED, @oledMenu, @oledPtr, oledMenuLimit)
+        Oled.SetOled(Header#AXES_READOUT_OLED, @oledMenu, @oledPtr, oledMenuLimit)
     
     abort
 
-  Cnc.ReadAdc
+  Oled.ReadAdc
   result := GetJoystick(Header#JOY_Y_ADC, -Header#DEFAULT_DEADBAND * 4)
   Pst.str(string(11, 13, "result Y ="))               
   Pst.Dec(result)
@@ -571,7 +323,7 @@ PUB CheckMenu(tempValue)
     highlightedLine--
   Pst.str(string(11, 13, "highlightedLine ="))               
   Pst.Dec(highlightedLine)
-  Cnc.SetInvert(0, highlightedLine * 8, Header#MAX_OLED_X, (highlightedLine * 8) + 7)
+  Oled.SetInvert(0, highlightedLine * 8, Header#MAX_OLED_X, (highlightedLine * 8) + 7)
 
 PUB GetJoystick(localAxis, scaler)
 
@@ -620,7 +372,7 @@ PUB GetJoystick(localAxis, scaler)
     '"p", "P":
     '  result := Header#ENTER_PROGRAM_STATE
     "b", "B":
-      {Cnc.OpenOutputFileW(0, Header.GetBitmapName(Header#BEANIE_SMALL_BITMAP), -1)
+      {Oled.OpenOutputFileW(0, Header.GetBitmapName(Header#BEANIE_SMALL_BITMAP), -1)
       Sd[0].writeData(@propBeanie, (Header.GetBitmapWidth(Header#BEANIE_SMALL_BITMAP) * {
       } Header.GetBitmapHeight(Header#BEANIE_SMALL_BITMAP)) / 8)  
       result := Header#HOMED_STATE  }
@@ -640,7 +392,7 @@ PUB GetJoystick(localAxis, scaler)
       result := Header#INIT_STATE
     other:
       result := Header#HOMED_STATE
-    Cnc.InvertOff
+    Oled.InvertOff
     abort
          }
 
@@ -651,7 +403,7 @@ PUB ScanFiles | size, characterIndex
   Pst.Str(string(11, 13, "SelectToExecute Method"))
   repeat
     characterIndex := 0
-    result := Cnc.ListEntries(0, "N")
+    result := Oled.ListEntries(0, "N")
     ifnot result
       'executeState := INIT_EXECUTE
       return
@@ -662,8 +414,8 @@ PUB ScanFiles | size, characterIndex
     Pst.Dec(size)
     Pst.Str(string(11, 13, "string = "))
     repeat size
-      Cnc.SafeTx(byte[result][characterIndex++])
-    'Cnc.PressToContinue
+      Oled.SafeTx(byte[result][characterIndex++])
+    'Oled.PressToContinue
     dataFileCounter += CheckForMatch(fileNamePtr, result, Header#PRE_ID_CHARACTERS, {
     } Header#ID_CHARACTERS, Header#POST_ID_CHARACTERS, @fileIdNumber + (4 * dataFileCounter))
     dataFileCounter <#= Header#MAX_DATA_FILES - 1
@@ -697,7 +449,7 @@ PUB CheckForMatch(localTargetPtr, localNewPtr, preSize, idSize, postSize, idPoin
   Pst.Dec(idPointer)
   Pst.Str(string("] = "))
   Pst.Dec(fileId)
-  'Cnc.PressToContinue           
+  'Oled.PressToContinue           
   result := 1
   
 PUB SelectToExecute(idPointer, size) : doneFlag | localPtr[8], {
@@ -707,9 +459,9 @@ PUB SelectToExecute(idPointer, size) : doneFlag | localPtr[8], {
   filesToDisplay := size <# 7
   idPtrOffset := 0
   maxOffset :=  0 #> (size - filesToDisplay)
-  Cnc.SetOled(Header#AXES_READOUT_OLED, @selectFileTxt, @oledPtr, filesToDisplay + 1)
+  Oled.SetOled(Header#AXES_READOUT_OLED, @selectFileTxt, @oledPtr, filesToDisplay + 1)
   highlightedLine := 1
-  Cnc.SetAdcChannels(Header#JOY_Y_ADC, Header#JOY_Z_ADC)
+  Oled.SetAdcChannels(Header#JOY_Y_ADC, Header#JOY_Z_ADC)
   Pst.ClearEnd
   Pst.Newline
   Pst.ClearBelow
@@ -722,7 +474,7 @@ PUB SelectToExecute(idPointer, size) : doneFlag | localPtr[8], {
   repeat 'until doneFlag
     result := CheckTerminalInput(Pst.RxCount, filesToDisplay, idPtrOffset)
     Pst.Home
-    Cnc.ReadAdc
+    Oled.ReadAdc
     result := GetJoystick(Header#JOY_Y_ADC, -Header#DEFAULT_DEADBAND * 4)
     Pst.str(string(11, 13, "result Y ="))               
     Pst.Dec(result)
@@ -735,14 +487,14 @@ PUB SelectToExecute(idPointer, size) : doneFlag | localPtr[8], {
       idPtrOffset++
       repeat localIdex from 1 to 7
         oledPtr[localIdex] := idPointer + (4 * idPtrOffset) + (4 * localIdex)
-      Cnc.SetOled(Header#AXES_READOUT_OLED, @selectFileTxt, @oledPtr, filesToDisplay + 1)
+      Oled.SetOled(Header#AXES_READOUT_OLED, @selectFileTxt, @oledPtr, filesToDisplay + 1)
     elseif result < 0 and highlightedLine > 1
       highlightedLine--
     elseif result < 0 and highlightedLine == 1 and idPtrOffset > 0
       idPtrOffset--
       repeat localIdex from 1 to 7
         oledPtr[localIdex] := idPointer + (4 * idPtrOffset) + (4 * localIdex)
-      Cnc.SetOled(Header#AXES_READOUT_OLED, @selectFileTxt, @oledPtr, filesToDisplay + 1)
+      Oled.SetOled(Header#AXES_READOUT_OLED, @selectFileTxt, @oledPtr, filesToDisplay + 1)
      
     highlightedFile := highlightedLine + idPtrOffset 
     Pst.str(string(11, 13, "idPtrOffset ="))               
@@ -753,9 +505,9 @@ PUB SelectToExecute(idPointer, size) : doneFlag | localPtr[8], {
     Pst.Dec(highlightedFile)
     Pst.ClearEnd
     Pst.Newline
-    Cnc.ReadableBin(Cnc.Get165Value, 32)
-    Cnc.SetInvert(0, highlightedLine * 8, Header#MAX_OLED_X, (highlightedLine * 8) + 7)
-    'Cnc.PressToContinue
+    Oled.ReadableBin(Oled.Get165Value, 32)
+    Oled.SetInvert(0, highlightedLine * 8, Header#MAX_OLED_X, (highlightedLine * 8) + 7)
+    'Oled.PressToContinue
     
 PUB CheckTerminalInput(tempValue, filesToDisplay, idPtrOffset) | localIdex
 
@@ -775,7 +527,7 @@ PUB CheckTerminalInput(tempValue, filesToDisplay, idPtrOffset) | localIdex
         result := 0
   else
     tempValue := highlightedLine
-    result := Cnc.Get165Value & buttonMask
+    result := Oled.Get165Value & buttonMask
 
   Pst.ClearEnd
   Pst.Newline
@@ -789,7 +541,7 @@ PUB CheckTerminalInput(tempValue, filesToDisplay, idPtrOffset) | localIdex
     Pst.Dec(long[oledPtr[localIdex]])
     
   ifnot result
-    'Cnc.InvertOff
+    'Oled.InvertOff
     case tempValue
       1..7:
         activeFile := fileIdNumber[tempValue + idPtrOffset - 1]
@@ -800,8 +552,8 @@ PUB CheckTerminalInput(tempValue, filesToDisplay, idPtrOffset) | localIdex
         Pst.str(string(" - 1] = "))           
         Pst.Dec(activeFile)
         executeState := ACTIVE_EXECUTE
-        Cnc.PressToContinue
-        Cnc.InvertOff
+        Oled.PressToContinue
+        Oled.InvertOff
         abort
       {13:
         activeFile := fileIdNumber[tempValue + idPtrOffset - 1]
@@ -812,22 +564,22 @@ PUB CheckTerminalInput(tempValue, filesToDisplay, idPtrOffset) | localIdex
         Pst.str(string(" - 1] = "))           
         Pst.Dec(activeFile)
         executeState := ACTIVE_EXECUTE
-        Cnc.PressToContinue
-        Cnc.InvertOff
+        Oled.PressToContinue
+        Oled.InvertOff
         abort   }
       "+":
         result := 1
         Pst.str(string(11, 13, "+ result := 1"))
-        Cnc.PressToContinue
+        Oled.PressToContinue
         return
       "-":
         result := -1
         Pst.str(string(11, 13, "- result := -1"))
-        Cnc.PressToContinue
+        Oled.PressToContinue
         return
       other:
         executeState := INIT_EXECUTE
-        Cnc.SetOled(Header#AXES_READOUT_OLED, @oledMenu, @oledPtr, oledMenuLimit)
+        Oled.SetOled(Header#AXES_READOUT_OLED, @oledMenu, @oledPtr, oledMenuLimit)
         return 0
    
 
@@ -882,27 +634,27 @@ PUB InterpreteDesign(fileIndex) | delimiterCount, parameterIndex, scratchValue, 
   'Pst.str(localStr)
   'Pst.str(string(11, 13, "Opening Design File"))
   
-  Cnc.OpenFileToRead(0, fileNamePtr, fileIndex)
+  Oled.OpenFileToRead(0, fileNamePtr, fileIndex)
 
   Pst.str(string(11, 13, "Design file has been opened."))
   'Write4x16String(localStr, 15, activeRow++, 0)
-  Cnc.ScrollString(localStr, 1)
-  Cnc.ScrollString(fileNamePtr, 1)
-  'Cnc.OpenOutputFilesW(fileIndex)
+  Oled.ScrollString(localStr, 1)
+  Oled.ScrollString(fileNamePtr, 1)
+  'Oled.OpenOutputFilesW(fileIndex)
   
   'Pst.str(string(11, 13, "All output files have been opened."))
   '**** Read file once to get extremes.
   repeat
-    result := Cnc.ReadByte(0)
+    result := Oled.ReadByte(0)
     'filePosition[Header#DESIGN_AXIS]++
     Pst.str(string(11, 13, "Character = ", QUOTE))
-    Cnc.SafeTx(result)
+    Oled.SafeTx(result)
     Pst.Char(QUOTE)
     
     if delimiterCount and result == " " and expectedChar <> COMMENT_CHAR
       delimiterCount := 0
       Pst.str(string(11, 13, "Skipping first space after delimiter."))
-      'Cnc.PressToContinue
+      'Oled.PressToContinue
       next ' skip first space after a delimter
     elseif delimiterCount
       case result
@@ -911,12 +663,12 @@ PUB InterpreteDesign(fileIndex) | delimiterCount, parameterIndex, scratchValue, 
           Pst.str(string(" -- Delimiter --"))
           Pst.str(string(11, 13, "delimiterCount = "))
           Pst.Dec(delimiterCount)
-          result := Cnc.PressToContinueOrClose("c")
+          result := Oled.PressToContinueOrClose("c")
           if result
             return
           next ' skip extra delimters
     Pst.str(string(11, 13, "expectedChar = ")) 
-    Pst.str(Cnc.FindString(@expectedCharText, expectedChar))
+    Pst.str(Oled.FindString(@expectedCharText, expectedChar))
     
     if result == Header#COMMENT_START_CHAR
       Pst.str(string(11, 13, "Beginning of Comment"))
@@ -961,7 +713,7 @@ PUB InterpreteDesign(fileIndex) | delimiterCount, parameterIndex, scratchValue, 
             Pst.str(string(11, 13, "comment = ", QUOTE))
             Pst.str(@commentFromFile)
             Pst.Char(QUOTE)
-            Cnc.ScrollString(@commentFromFile, 1)
+            Oled.ScrollString(@commentFromFile, 1)
           other:
             if commentIndex < MAX_COMMENT_CHARACTERS 
               commentFromFile[commentIndex++] := result
@@ -974,7 +726,7 @@ PUB InterpreteDesign(fileIndex) | delimiterCount, parameterIndex, scratchValue, 
 
   repeat result from 0 to 3
     if result < 3
-      'Cnc.WriteLong(endDat)
+      'Oled.WriteLong(endDat)
       'filePosition[result] += 4
     'Sd[result].closeFile
     Pst.str(string(11, 13, "filePosition["))
@@ -984,12 +736,12 @@ PUB InterpreteDesign(fileIndex) | delimiterCount, parameterIndex, scratchValue, 
     'UnmountSd(result)
     
   Pst.str(string(11, 13, "End of InterpreteDesign method."))
-  Cnc.PressToContinue
+  Oled.PressToContinue
 
 PUB CodeAction(sdInstance, localType, localValue)
 
   Pst.str(string(11, 13, "CodeAction("))
-  Pst.str(Cnc.FindString(@axesText, sdInstance))
+  Pst.str(Oled.FindString(@axesText, sdInstance))
   Pst.str(string(", "))
   Pst.Char(localType)
   Pst.str(string(", "))
@@ -1007,11 +759,11 @@ PUB CodeAction(sdInstance, localType, localValue)
 PUB ReadG(sdInstance, localValue)
 
   Pst.str(string(11, 13, "ReadG("))
-  Pst.str(Cnc.FindString(@axesText, sdInstance))
+  Pst.str(Oled.FindString(@axesText, sdInstance))
   Pst.str(string(", "))
   Pst.Dec(localValue)
   Pst.str(string(" = "))
-  Pst.str(Cnc.FindString(@gCodeText, localValue))
+  Pst.str(Oled.FindString(@gCodeText, localValue))
   Pst.Char(")")
   
   case localValue
@@ -1069,7 +821,7 @@ PUB SetZDown(localDownFlag)
 PUB GetStepsFromUnits(localUnits, localValue, localMultiplier)
 
   Pst.str(string(11, 13, "GetStepsFromUnits("))
-  Pst.str(Cnc.FindString(@unitsText, localUnits))
+  Pst.str(Oled.FindString(@unitsText, localUnits))
   Pst.str(string(", "))
   Pst.Dec(localValue)
   Pst.str(string(", "))
@@ -1101,14 +853,14 @@ PRI GetLine(sdInstance) | x0, y0, stepPosition[2], longAxis, shortAxis, localBuf
 } localStr, multiplier[2], decPoints[2], original[2], size, localIndex
 '' x and y are relative to current position.
 
-  'Cnc.ScrollString(string("line")) 
-  original[0] := Cnc.GetDec(0)
-  multiplier[0] := Cnc.GetMultiplier
-  decPoints[0] := Cnc.GetDecPoints
+  'Oled.ScrollString(string("line")) 
+  original[0] := Oled.GetDec(0)
+  multiplier[0] := Oled.GetMultiplier
+  decPoints[0] := Oled.GetDecPoints
   x0 := GetStepsFromUnits(units, original[0], multiplier[0])
-  original[1] := Cnc.GetDec(0)
-  multiplier[1] := Cnc.GetMultiplier
-  decPoints[1] := Cnc.GetDecPoints
+  original[1] := Oled.GetDec(0)
+  multiplier[1] := Oled.GetMultiplier
+  decPoints[1] := Oled.GetDecPoints
   y0 := GetStepsFromUnits(units, original[1], multiplier[1])
 
   'filePosition[Header#X_AXIS] += 4  ' all files will have holdDat or lineDat added
@@ -1148,7 +900,7 @@ PRI GetLine(sdInstance) | x0, y0, stepPosition[2], longAxis, shortAxis, localBuf
   'Pst.Newline
   'Pst.Str(localStr)
   
-  Cnc.ScrollString(localStr, 1)
+  Oled.ScrollString(localStr, 1)
 
   repeat localIndex from 0 to 1
     size := DecSize(original[localIndex])
@@ -1156,20 +908,20 @@ PRI GetLine(sdInstance) | x0, y0, stepPosition[2], longAxis, shortAxis, localBuf
       size++
     if decPoints[localIndex]
       size++ 
-    result := Format.Str(@localBuffer, Cnc.FindString(@xyzLabels, localIndex))
+    result := Format.Str(@localBuffer, Oled.FindString(@xyzLabels, localIndex))
     result := Format.FDec(result, original[localIndex], size, decPoints[localIndex])
     result := Format.Ch(result, " ")
-    result := Format.Str(result, Cnc.FindString(@unitsTxt, units))
+    result := Format.Str(result, Oled.FindString(@unitsTxt, units))
     byte[result] := 0
-    Cnc.ScrollString(@localBuffer, 1)
+    Oled.ScrollString(@localBuffer, 1)
     
   repeat localIndex from 0 to 1
-    result := Format.Str(@localBuffer, Cnc.FindString(@xyzLabels, localIndex))
+    result := Format.Str(@localBuffer, Oled.FindString(@xyzLabels, localIndex))
     result := Format.Dec(result, x0[localIndex])
     result := Format.Ch(result, " ")
-    result := Format.Str(result, Cnc.FindString(@unitsText, Header#STEP_UNIT))
+    result := Format.Str(result, Oled.FindString(@unitsText, Header#STEP_UNIT))
     byte[result] := 0
-    Cnc.ScrollString(@localBuffer, 1)
+    Oled.ScrollString(@localBuffer, 1)
 
   
  
@@ -1644,7 +1396,7 @@ PRI DisplayLineStats(localTimeFast, localTimeSlow, slowIndex, fastIndex, fast, s
   if fastIndex // headingInterval == 0
     DisplayLineHeading
     if pauseFlag
-      Cnc.PressToContinueOrClose("c")
+      Oled.PressToContinueOrClose("c")
 
 {PRI GetDec(sdInstance) | inputCharacter, negativeFlag, startOfNumberFlag
 
@@ -1653,10 +1405,10 @@ PRI DisplayLineStats(localTimeFast, localTimeSlow, slowIndex, fastIndex, fast, s
   longfill(@negativeFlag, 0, 2)
 
   repeat
-    inputCharacter := Cnc.ReadByte(0)
+    inputCharacter := Oled.ReadByte(0)
     'filePosition[sdInstance]++
     Pst.str(string(11, 13, "inputCharacter = "))
-    Cnc.SafeTx(inputCharacter)
+    Oled.SafeTx(inputCharacter)
     case inputCharacter
       "0".."9":
         startOfNumberFlag := 1
@@ -1680,7 +1432,7 @@ PRI DisplayLineStats(localTimeFast, localTimeSlow, slowIndex, fastIndex, fast, s
         Pst.Dec(result)
         Pst.str(string(11, 13, "Unexpected byte = $"))
         Pst.Hex(inputCharacter, 2)
-        Cnc.PressToContinue
+        Oled.PressToContinue
         'waitcnt(clkfreq * 2 + cnt)
     
   until inputCharacter == delimiter[0]
@@ -1697,11 +1449,11 @@ PUB ReadM(sdInstance, localValue) : parameterCount | inputCharacter, expectedPar
 } delimiterCount
 
   Pst.str(string(11, 13, "ReadM("))
-  Pst.str(Cnc.FindString(@axesText, sdInstance))
+  Pst.str(Oled.FindString(@axesText, sdInstance))
   Pst.str(string(", "))
   Pst.Dec(localValue)
   Pst.str(string(" = "))
-  Pst.str(Cnc.FindString(@mCodeText, localValue))
+  Pst.str(Oled.FindString(@mCodeText, localValue))
   Pst.Char(")")
 
   delimiterCount := 1
@@ -1722,12 +1474,12 @@ PUB ReadM(sdInstance, localValue) : parameterCount | inputCharacter, expectedPar
   expectedParameters := 0
   
   Pst.str(string(11, 13))
-  Pst.str(Cnc.FindString(@mCodeText, localValue))
+  Pst.str(Oled.FindString(@mCodeText, localValue))
     
   if expectedParameters
     Pst.str(string(" = "))
     repeat  
-      inputCharacter := Cnc.readByte(0)
+      inputCharacter := Oled.readByte(0)
       'filePosition[sdInstance]++
       Pst.Char(inputCharacter)
       case inputCharacter
@@ -1751,11 +1503,11 @@ PUB ReadD(sdInstance, localValue) : parameterCount | inputCharacter, expectedPar
 } delimiterCount
 
   Pst.str(string(11, 13, "ReadD("))
-  Pst.str(Cnc.FindString(@axesText, sdInstance))
+  Pst.str(Oled.FindString(@axesText, sdInstance))
   Pst.str(string(", "))
   Pst.Dec(localValue)
   Pst.str(string(" = "))
-  Pst.str(Cnc.FindString(@dCodeText, localValue))
+  Pst.str(Oled.FindString(@dCodeText, localValue))
   Pst.Char(")")
 
   delimiterCount := 1
@@ -1777,12 +1529,12 @@ PUB ReadD(sdInstance, localValue) : parameterCount | inputCharacter, expectedPar
       } PROGRAM_NAME_D, EXTERNALLY_CREATED_D, CREATED_USING_PROGRAM_D, AUTHOR_NAME_D, {
       } PROJECT_NAME_D: }
   Pst.str(string(11, 13))
-  Pst.str(Cnc.FindString(@dCodeText, localValue))
+  Pst.str(Oled.FindString(@dCodeText, localValue))
     
   if expectedParameters
     Pst.str(string(" = "))
     repeat  
-      inputCharacter := Cnc.readByte(0)
+      inputCharacter := Oled.readByte(0)
       'filePosition[sdInstance]++
       Pst.Char(inputCharacter)
       case inputCharacter
@@ -1800,7 +1552,7 @@ PUB ReadD(sdInstance, localValue) : parameterCount | inputCharacter, expectedPar
 PUB GetName(sdInstance, localPtr, localSize)
 
   repeat
-    result := Cnc.ReadByte(0)
+    result := Oled.ReadByte(0)
     'filePosition[sdInstance]++
     case result
       delimiter[0], delimiter[1], delimiter[2], delimiter[3], delimiter[4]:
@@ -1810,7 +1562,7 @@ PUB GetName(sdInstance, localPtr, localSize)
   while --localSize and result <> delimiter[0] 
 
   repeat while result <> delimiter[0] ' find end of program name even if it doesn't fit
-    result := Cnc.ReadByte(0)
+    result := Oled.ReadByte(0)
     'filePosition[sdInstance]++
     case result
       delimiter[0], delimiter[1], delimiter[2], delimiter[3], delimiter[4]:
@@ -1821,11 +1573,11 @@ PUB GetName(sdInstance, localPtr, localSize)
 PUB OpenConfig
 
   Pst.Str(string(11, 13, "OpenConfig Method"))
-  Cnc.PressToContinue
-  sdFlag := Cnc.OpenConfig(@programState)
+  Oled.PressToContinue
+  sdFlag := Oled.OpenConfig(@programState)
   
   if sdFlag == Header#READ_FILE_SUCCESS
-    Cnc.ReadData(0, @programState, Header#CONFIG_SIZE)
+    Oled.ReadData(0, @programState, Header#CONFIG_SIZE)
     case programState
       {Header#FRESH_PROGRAM:
         Pst.Str(string(11, 13, 7, "Error! programState = FRESH_PROGRAM"))
@@ -1835,11 +1587,11 @@ PUB OpenConfig
         ResetConfig           }
       Header#TRANSITIONING_PROGRAM:
         'Pst.Str(string(11, 13, "Returning from ", QUOTE))
-        'Pst.Str(Cnc.FindString(@programNames, previousProgram))
+        'Pst.Str(Oled.FindString(@programNames, previousProgram))
         'Pst.Char(QUOTE)
         previousProgram := Header#DESIGN_INPUT_MAIN
         programState := Header#ACTIVE_PROGRAM
-        Cnc.WriteData(0, @programState, Header#CONFIG_SIZE)
+        Oled.WriteData(0, @programState, Header#CONFIG_SIZE)
       {Header#SHUTDOWN_PROGRAM:
         Pst.Str(string(11, 13, "Previous session was successfully shutdown."))
         ResetConfig  }
@@ -1850,17 +1602,17 @@ PUB OpenConfig
         Pst.Str(@errorButContinueText)
         oledPtr := 0
         oledPtr[1] := 0
-        Cnc.SetOled(Header#AXES_READOUT_OLED, @errorButContinueText, @oledPtr, 2)
+        Oled.SetOled(Header#AXES_READOUT_OLED, @errorButContinueText, @oledPtr, 2)
         previousProgram := Header#DESIGN_INPUT_MAIN
         programState := Header#ACTIVE_PROGRAM
-        Cnc.WriteData(0, @programState, Header#CONFIG_SIZE)
+        Oled.WriteData(0, @programState, Header#CONFIG_SIZE)
         waitcnt(clkfreq * 2 + cnt)
   else
     Pst.Str(string(11, 13, 7, "Error! Configuration File Not Found"))
     Pst.Str(string(11, 13, 7))
     Pst.Str(@endText)
     oledPtr := 0
-    Cnc.SetOled(Header#AXES_READOUT_OLED, @endText, @oledPtr, 1)
+    Oled.SetOled(Header#AXES_READOUT_OLED, @endText, @oledPtr, 1)
     repeat     
   waitcnt(clkfreq * 2 + cnt) ' temp while debugging
         
@@ -1877,16 +1629,16 @@ PRI ResetConfig
          }
 PUB L
 
-  Cnc.L
+  Oled.L
 
 PUB C
 
-  Cnc.C
+  Oled.C
   
 PUB D 'ebugCog
 '' display cog ID at the beginning of debug statements
 
-  Cnc.D
+  Oled.D
 
 PUB DHome
 
@@ -1926,7 +1678,7 @@ PUB DHome
     Pst.str(string(" / "))
     Pst.Dec(maxDelay)
     ifnot localIndex // pauseInterval
-      Cnc.PressToContinue
+      Oled.PressToContinue
     localIndex++  
   while localDelay > minDelay
 

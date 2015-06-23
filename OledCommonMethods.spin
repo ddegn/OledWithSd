@@ -1,4 +1,4 @@
-DAT programName         byte "CncCommonMethods", 0
+DAT programName         byte "OledCommonMethods", 0
 CON
 {{      
 
@@ -60,13 +60,12 @@ CON
   
 OBJ
 
-  Header : "HeaderCnc"
+  Header : "HeaderOled"
   Pst : "Parallax Serial TerminalDat"
   Format : "StrFmt"
   Sd[2]: "SdSmall" 
   Spi : "OledSpi" 
-  'Num : "Numbers"
-   
+    
 VAR
 
 
@@ -2135,3 +2134,8 @@ PUB PressToContinueC
 PUB GetOledBuffer
 
   result := Spi.GetBuffer
+
+PUB StopScroll
+
+  Spi.StopScroll
+  
